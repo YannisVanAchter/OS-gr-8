@@ -13,7 +13,7 @@ struct circular
 {
     struct node* lastNode; // node where after wich we add the next value
     struct node* firstNode; // first node of the circular
-    int head; // curent lecture cursor
+    int head; // current lecture cursor
     unsigned int size; // curent size of the circular
 };
 
@@ -29,10 +29,15 @@ struct circular* mkCircular()
 signed int extract(struct circular* cycle )
 {
     /** 
-     * return the value containd at curent node and pass to the next
+     * return the value containd at current node and pass to the next
      * @param cycle pointer to the circular
      * @return the data contained at the current node
+     * @author @julien8vp
     */
+
+   int data_extracted = cycle->firstNode->data; //extraction of the data of the 1st node (FIFO)
+   cycle->firstNode = cycle->firstNode->next; //replace the current 1st node by the next
+   return (data_extracted); //return data of the extracted element
 }
 
 void deleteCircular(unsigned int* cycle)
@@ -40,7 +45,10 @@ void deleteCircular(unsigned int* cycle)
     /**
      * Delete all node of the circular and free the memory
      * @param cycle the address of the circular to delete
+     * @author @julien8vp
      */
+    free(cycle); //free the memory taken by the circular
+    
 }
 
 struct node* rotate(struct circular* cycle, int offset)
@@ -109,25 +117,32 @@ struct node* rotateToOdd(struct circular* cycle)
     return rotate(cycle, 0);
 }
 
-void insert(unsigned int* cycle, signed int elt)
+void insert(struct circular* cycle, signed int elt)
 {
     /** 
      * Add at the node specified in the circular at the end
      * @param cycle the address of the circular where insert the value
      * @param elt  the value to insert
+     * @author @julien8vp
      */
+
+    cycle->lastNode->previous = cycle->lastNode; // the last node becomes the second to last node
+    elt = cycle->lastNode->data; // the new insert is the new last node (FIFO)
+    cycle->lastNode = cycle->head; // put the new node as the current node
 }
 
-void delete(unsigned int* cycle)
+void delete(struct circular* cycle)
 {
     /**
      * Will delete the current value in the circular and pass to the next one
      * When delete the memory is freed
      * 
      * @param cycle the address of the circular where remove the value
-     * 
+     * @author @julien8vp
      * If this is the last value in the circular, we delete the circular
      */
+    free(cycle->head); // freed of the memory
+    cycle->head = cycle->firstNode; //put the current node at the head of the circular
 }
 
 int main(int argc, char* argv[])
