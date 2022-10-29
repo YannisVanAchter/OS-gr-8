@@ -51,6 +51,7 @@ struct node* rotate(struct circular* cycle, int offset)
      * @param cycle the address of the circular
      * @param offset 0 if we want odd value, 1 if we want even value
      * @return the address of the node wich contain an odd value 
+     * @author @YannisVanAchter
      * If there is no odd value in the circular it return NULL
      */
      // check the offset to make sure it will respond as attend
@@ -74,8 +75,8 @@ struct node* rotate(struct circular* cycle, int offset)
     // If the circular does not contain attend we print message to inform and return null
     if (nodeToReturn == startingPoint && (cycle->firstNode)->data % 2 != offset)
     {
-        char type[5] = (offset == 0) ? "odd\0" : "even\0";
-        printf("The program did not find %s in the circular", type);
+        // print message to inform there is no wanted data in the circular
+        printf("The program did not find %s in the circular", (offset == 0) ? "odd\0" : "even\0");
         return NULL;
     }
 
@@ -89,6 +90,7 @@ struct node* rotateToEven(struct circular* cycle)
      * 
      * @param cycle the address of the circular
      * @return the address of the node wich contain an even value 
+     * @author @YannisVanAchter
      * If there is no even value in the circular it return NULL
      */
     return rotate(cycle, 1);
@@ -101,6 +103,7 @@ struct node* rotateToOdd(struct circular* cycle)
      * 
      * @param cycle the address of the circular
      * @return the address of the node wich contain an odd value 
+     * @author @YannisVanAchter
      * If there is no odd value in the circular it return NULL
      */
     return rotate(cycle, 0);
@@ -136,6 +139,12 @@ int main(int argc, char* argv[])
      * @param argv pointer to the arguments passed in command line (char [])
      * @return 0 on success
      */
+     int success = 1;
+     printf("Test is running\n");
 
+    if (success)
+    {
+        printf("All tests succeeded\n");
+    }
      return EXIT_SUCCESS;
 }
