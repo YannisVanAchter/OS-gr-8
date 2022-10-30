@@ -34,9 +34,9 @@ signed int extract(struct circular* cycle )
      * @return the data contained at the current node
      * @author @julien8vp
     */
-
-   int data_extracted = cycle->firstNode->data; //extraction of the data of the 1st node (FIFO)
-   cycle->firstNode = cycle->firstNode->next; //replace the current 1st node by the next
+   int data_extracted = 0;
+   cycle->firstNode->data = data_extracted; //extraction of the data of the 1st node (FIFO)
+   cycle->firstNode->next = cycle->firstNode; //replace the current 1st node by the next
    return (data_extracted); //return data of the extracted element
 }
 
@@ -126,9 +126,9 @@ void insert(struct circular* cycle, signed int elt)
      * @author @julien8vp
      */
 
-    cycle->lastNode->previous = cycle->lastNode; // the last node becomes the second to last node
-    elt = cycle->lastNode->data; // the new insert is the new last node (FIFO)
-    cycle->lastNode = cycle->head; // put the new node as the current node
+    cycle->lastNode = cycle->lastNode->previous; // the last node becomes the second to last node
+    cycle->lastNode->data = elt; // the new insert is the new last node (FIFO)
+    cycle->head = cycle->lastNode; // put the new node as the current node
 }
 
 void delete(struct circular* cycle)
@@ -142,7 +142,7 @@ void delete(struct circular* cycle)
      * If this is the last value in the circular, we delete the circular
      */
     free(cycle->head); // freed of the memory
-    cycle->head = cycle->firstNode; //put the current node at the head of the circular
+    cycle->firstNode = cycle->head; //put the current node at the head of the circular
 }
 
 int main(int argc, char* argv[])
