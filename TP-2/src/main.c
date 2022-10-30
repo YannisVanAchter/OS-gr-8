@@ -24,6 +24,7 @@ struct circular* mkCircular()
      * 
      * @return the address of the pointer where the circular is starting
     */
+   
 };
 
 signed int extract(struct circular* cycle )
@@ -34,10 +35,14 @@ signed int extract(struct circular* cycle )
      * @return the data contained at the current node
      * @author @julien8vp
     */
-   int data_extracted = 0;
-   cycle->firstNode->data = data_extracted; //extraction of the data of the 1st node (FIFO)
-   cycle->firstNode->next = cycle->firstNode; //replace the current 1st node by the next
-   return (data_extracted); //return data of the extracted element
+    int data_extracted = 0;
+    cycle->firstNode->data = data_extracted; // extraction of the data of the 1st node (FIFO)
+    cycle->firstNode->next = cycle->firstNode; // replace the current 1st node by the next
+    cycle->size--; // decrease of the size
+    {
+        deleteCircular(cycle);
+    }
+    return (data_extracted); // return data of the extracted element
 }
 
 void deleteCircular(unsigned int* cycle)
@@ -47,7 +52,7 @@ void deleteCircular(unsigned int* cycle)
      * @param cycle the address of the circular to delete
      * @author @julien8vp
      */
-    free(cycle); //free the memory taken by the circular
+    free(cycle); // free the memory taken by the circular
     
 }
 
@@ -129,6 +134,7 @@ void insert(struct circular* cycle, signed int elt)
     cycle->lastNode = cycle->lastNode->previous; // the last node becomes the second to last node
     cycle->lastNode->data = elt; // the new insert is the new last node (FIFO)
     cycle->head = cycle->lastNode; // put the new node as the current node
+    cycle->size++; // increase the size
 }
 
 void delete(struct circular* cycle)
@@ -142,7 +148,12 @@ void delete(struct circular* cycle)
      * If this is the last value in the circular, we delete the circular
      */
     free(cycle->head); // freed of the memory
-    cycle->firstNode = cycle->head; //put the current node at the head of the circular
+    cycle->firstNode = cycle->head; // put the current node at the head of the circular
+    cycle->size--; // decrease of the size
+    if (cycle->size <= 0)
+    {
+        deleteCircular(cycle);
+    }
 }
 
 int main(int argc, char* argv[])
