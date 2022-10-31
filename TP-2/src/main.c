@@ -15,7 +15,6 @@ struct circular
 {
     struct node* lastNode; // node where after wich we add the next value
     struct node* firstNode; // first node of the circular
-    int head; // current lecture cursor
     unsigned int size; // curent size of the circular
 };
 
@@ -27,11 +26,10 @@ struct circular* mkCircular()
      * @return the address of the pointer where the circular is starting
      * @author @YannisVanAchter
     */
-    // set the circular (the first node is a NULL pointer)
+    // set the circular and add the node to it
     struct circular* circular = malloc(sizeof(struct circular));
     circular->firstNode = NULL;
     circular->lastNode = NULL;
-    circular->head = 0;
     circular->size = 0;
     return circular;
 };
@@ -44,13 +42,19 @@ signed int extract(struct circular* cycle )
      * @return the data contained at the current node
      * @author @julien8vp
     */
-    signed int dataExtracted = cycle->firstNode->data; // extraction of the data of the 1st node (FIFO)
-    cycle->firstNode = cycle->firstNode->next ; // replace the current 1st node by the next
-    cycle->head++; // increace of the head
-    if (cycle->head > cycle->size)
+    if (cycle->size == 0)
     {
-        cycle->head = 0;
+        printf("Error the circular is empty\n");
+        return NULL;
     }
+
+    struct node* nodeToExtract = cycle->firstNode; 
+    int dataExtracted = nodeToExtract->data; // extraction of the data of the 1st node (FIFO)
+    cycle->firstNode = cycle->firstNode->next ; // replace the current 1st node by the next
+    cycle->firstNode->previous = cycle->lastNode;
+    cycle->size--; // increace of the size
+    free(nodeToExtract);
+    
     return dataExtracted; // return data of the extracted element
 }
 
@@ -74,14 +78,17 @@ struct node* rotate(struct circular* cycle, int offset)
 
     // allow memory for usefull variable
     struct node* nodeToReturn;
+    struct node* tempNode;
     struct node* startingPoint = cycle->firstNode;
 
     do // loop until we met a node where the data corresponds to attend
     {
         nodeToReturn = ((cycle->firstNode)->next);
-        cycle->head++;
+        tempNode = cycle->firstNode;
+        cycle->lastNode = tempNode;
         cycle->firstNode = nodeToReturn;
-    } while ((cycle->firstNode)->data % 2 != offset && nodeToReturn != startingPoint);
+    } 
+    while ((cycle->firstNode)->data % 2 != offset && nodeToReturn != startingPoint);
 
     // If the circular does not contain attend we print message to inform and return null
     if (nodeToReturn == startingPoint && (cycle->firstNode)->data % 2 != offset)
@@ -155,107 +162,53 @@ int main(int argc, char* argv[])
      * @param argv pointer to the arguments passed in command line (char [])
      * @return 0 on success
      */
-    int success = TRUE;
     printf("Test is running\n");
 
     struct circular* cycle = mkCircular();
+    signed int result = 0;
 
     insert(cycle, 0);
-    insert(cycle, 1);
-    insert(cycle, 2);
+    if (cycle->size != 1) 
+    {
+        printf("Test failed line 173\n");
+        exit(EXIT_FAILURE);
+    }
+    result = extract(cycle);
+    if (result != 0)
+    {
+        printf("Test failed line 179\n");
+        exit(EXIT_FAILURE);
+    }
 
-    signed int result = extract(cycle);
-    if (result != 0) {
-        printf("Error test 1\n");
-        printf("%i\n", result);
-        success = FALSE;
-    }
-    if (cycle->head != 1)
+    // test greater cycle
+    struct circular* cycle2 = mkCircular();
+    for (int i = 0; i < 10; i++)
     {
-        printf("Error test 1\n");
-        printf("%i\n", cycle->head);
-        success = FALSE;
+        insert(cycle2, i);
     }
-    result = extract(cycle);
-    if (result != 1) {
-        printf("Error test 1\n");
-        printf("%i\n", result);
-        success = FALSE;
-    }
-    if (cycle->head != 2)
+    if (cycle2->size != 10)
     {
-        printf("Error test 1\n");
-        printf("%i\n", cycle->head);
-        success = FALSE;
+        printf("Test failed line 190\n");
+        exit(EXIT_FAILURE);
     }
-    result = extract(cycle);
-    if (result != 2) {
-        printf("Error test 1\n");
-      printf("%i\n", result);
-        success = FALSE;
-    }
-    if (cycle->head != 3)
+    for (int i = 0; i < 10; i++)
     {
-        printf("Error test 1\n");
-        printf("%i\n", cycle->head);
-        success = FALSE;
+        struct node* node = rotateToOdd(cycle2);
+        if (node->data % 2 != 1)
+        {
+            printf("Test failed line 197\nThe current value of iteration is %d\nThe current value of data is %d\n", i, node->data);
+            exit(EXIT_FAILURE);
+        }
+        extract(cycle2);
+    }
+
+    struct node* hopeNullPointer = rotateToOdd(cycle2);
+    if (hopeNullPointer != NULL)
+    {
+        printf("Test failed line 208\n");
+        exit(EXIT_FAILURE);
     }
     
-    insert(cycle, 3);
-    result = extract(cycle);
-    if (result != 0) {
-        printf("Error test 1\n");
-        printf("%i\n", result);
-        success = FALSE;
-    }
-    if (cycle->head != 4)
-    {
-        printf("Error test 1\n");
-        printf("%i\n", cycle->head);
-        success = FALSE;
-    }
-    if (cycle->lastNode->data != 3){
-        printf("Error test 1\n");
-        printf("%i\n", result);
-        success = FALSE;
-    }
-
-    // test rotateToOdd/Even
-    // we are currently at 2 as data in the first node
-    struct node* node1 = rotateToOdd(cycle);
-    if (node1->data % 2 != 1)
-    {
-        printf("Error test 2\n");
-        printf(" %d\n", node1->data);
-        success = FALSE;
-    }
-    if (node1->data != 3)
-    {
-        printf("Error test 2\n");
-        printf(" %d\n", node1->data);
-        success = FALSE;
-    }
-    struct node *node2 = rotateToEven(cycle);
-    if (node2->data % 2 != 0)
-    {
-        printf("Error test 2\n");
-        printf(" %d\n", node1->data);
-        success = FALSE;
-    }
-    if (node2->data != 0)
-    {
-        printf("Error test 2\n");
-        printf(" %d\n", node1->data);
-        success = FALSE;
-    }
-
-    if (success)
-    {
-        printf("All tests succeeded\n");
-    }
-    else 
-    {
-        printf("Some tests failed\n");
-    }
+    printf("All test passed\n");
      return EXIT_SUCCESS;
 }
