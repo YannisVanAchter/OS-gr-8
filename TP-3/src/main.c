@@ -13,13 +13,15 @@
  * Le programme se contente juste d'afficher le temps de traitement
  * 
  * Rappel de l'exécution pour 120.000 éléments:
- * 1 thread: 25.894.600 ns
- * 2 threads: 16.285.100 ns
- * 3 threads: 8.872.300 ns (Optimum)
- * 5 threads: 9.258.500 ns
- * 10 threads: 21.181.900 ns
- * 100 threads: 72.058.900 ns
- * 1000 threads: 804.233.800 ns
+ * 1 thread: 31.039.900ns
+ * 2 threads: 17.319.200 ns
+ * 3 threads: 14.691.800 ns 
+ * 4 threads: 14.520.800 ns (Optimum)
+ * 5 threads: 12.188.200 ns
+ * 10 threads: 12.252.600 ns
+ * 50 threads: 58.334.000 ns
+ * 100 threads: 68.696.600 ns
+ * 1000 threads: 567.263.700 ns
 */
 
 #include <math.h>
@@ -118,12 +120,11 @@ void* thread_merge_sort(void* arguments) {
 void start_merge_sort(int array[], index start, index final, const int N_THREAD) 
 {
     const int array_size = final - start;
-    const index end_seg = floor((start + final) / N_THREAD); // Fin d'un segment
+    const index end_seg = floor((start + final) / N_THREAD); // end of one standart segmentation
 
     // set variable of thread management and function parameters
     struct thread_args* args = malloc(sizeof(struct thread_args) * N_THREAD);
-
-    pthread_t* thread_array = malloc(sizeof(pthread_t) * N_THREAD); // pid of threads
+    pthread_t* thread_array = malloc(sizeof(pthread_t) * N_THREAD); // list of pids of threads
     index begin = start; 
     index end = end_seg;
     // loop to create threads and updates parameters
@@ -133,28 +134,33 @@ void start_merge_sort(int array[], index start, index final, const int N_THREAD)
         args[n_thread].start = begin;
         args[n_thread].final = end;
         if (n_thread == N_THREAD - 1 && array_size % 2 != 0) 
-        { // Check if we end at right place in the array
-            args[n_thread].final = array_size - 1;
-        }
+            args[n_thread].final = array_size - 1; // Check if we end at right place in the array
+        
 
         pthread_create(&(thread_array[n_thread]), NULL, thread_merge_sort, &(args[n_thread]));
         end += end_seg; 
         begin += end_seg;
     }
 
-    // Wait end of threads process
+    // Wait end of first and second process
     void* thread_return;
-    for (int i = 0; i < N_THREAD; i++) pthread_join(thread_array[i], &thread_return);
+    pthread_join(thread_array[0], &thread_return);
+    pthread_join(thread_array[1], &thread_return);
     
     // merge from all thread
     index separator = end_seg;
     end = 2 *end_seg;
     for (index n_thread = 1; n_thread < N_THREAD; n_thread++)
     {
-        while (end > final) end--; // decrement the end of segmentation if we go too far in memory
+        if (n_thread >= 2) 
+            pthread_join(thread_array[n_thread], &thread_return); // wait end of next segmentation to merge
+        
+        if (n_thread == N_THREAD - 1 && array_size % 2 != 0) 
+            end = array_size - 1; // Check if we end at right place in the array
+        
         merge(array, 0, separator, end); 
         separator += end_seg; 
-        end += end_seg; 
+        end += end_seg;
     } 
 }
 
@@ -176,7 +182,11 @@ long int nanos_between(struct timespec *final , struct timespec *start)
 
 int main(int argc, char *argv[])
 {
-    int array[120000] = {12, 0, 2, 9, 34, 100, 300, 291, 377, 1, 81, 10};
+    int MAX_SIZE = 120000;
+    srand(time(NULL));
+    int array[MAX_SIZE];
+    for (int i = 0; i < MAX_SIZE; i++) array[i] = rand() % MAX_SIZE;
+
     struct timespec start, final;
     int N_THREAD = -1;
     char *p;
