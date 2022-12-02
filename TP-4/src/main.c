@@ -11,8 +11,7 @@
 #define false 0
 #define true 1
 
-sem_t room;
-sem_t baguettes[NB_PHILOSPHE];
+pthread_mutex_t baguettes[NB_PHILOSPHE];
 
 void manger(int phil)
 {
@@ -21,49 +20,77 @@ void manger(int phil)
 	printf("Philosophe %d a fini de manger \n",phil);
 }
 
-void tenter(int phil)
+int tenter(int phil)
 {
     printf("Le philosophe n° %d essaye de prendre les baguettes\n", phil);
 
     // Try take the chopsticks
-    sem_wait(&baguettes[DROITE(phil)]);
-    sem_wait(&baguettes[GAUCHE(phil)]);
+	int right = pthread_mutex_trylock(&baguettes[DROITE(phil)]);
+	int left = pthread_mutex_trylock(&baguettes[GAUCHE(phil)]);
     
-    printf("A récupérer les baguettess\n");
+	if (left == 0 && right == 0)
+	{
+    	printf("A récupérer les baguettess\n");
+		return 1;
+	}
+	if (left != 0)
+	{
+		pthread_mutex_unlock(&baguettes[GAUCHE(phil)]);
+	}
+	if (right != 0)
+	{
+		pthread_mutex_unlock(&baguettes[DROITE(phil)]);
+	}
+	return 0;
 }
 
 void libere(int phil)
 {
     // drop chopsticks for the next
-	sem_post(&baguettes[GAUCHE(phil)]);
-	sem_post(&baguettes[DROITE(phil)]);
+	pthread_mutex_unlock(&baguettes[GAUCHE(phil)]);
+	pthread_mutex_unlock(&baguettes[DROITE(phil)]);
+}
+
+void penser(int phil)
+{
+	printf("Philosophe %d pense\n",phil);
+	sleep(2);
+	printf("Philosophe %d a fini de penser\n",phil);
 }
 
 void * philosophe(void * num)
 {
 	int phil = *(int *)num;
-
-	sem_wait(&room);
 	printf("Je suis le philosophe %d\n",phil);
-    
-    tenter(phil);
-	manger(phil);
-    libere(phil);
+	int s = 0;
 
-	sem_post(&room);
+	while(true) 
+	{
+		printf("Je suis le philosophe %d\n",phil);
+		
+		s = tenter(phil);
+		if (s)
+		{
+			manger(phil);
+			libere(phil);
+		}
+		penser(phil);
+	}
 }
 
 int main()
 {
 	int i,a[NB_PHILOSPHE];
 	pthread_t tid[NB_PHILOSPHE];
-	
-	sem_init(&room,0,4);
-	
-	for(i=0;i<NB_PHILOSPHE;i++)
-		sem_init(&baguettes[i],0,1);
+
+	for (i=0; i<NB_PHILOSPHE; i++)
+	{
+
+		pthread_mutex_init(&baguettes[i], NULL);
+	}
 		
-	for(i=0;i<NB_PHILOSPHE;i++){
+	for(i=0;i<NB_PHILOSPHE;i++)
+	{
 		a[i]=i;
 		pthread_create(&tid[i], NULL, philosophe, (void *)&a[i]);
 	}
