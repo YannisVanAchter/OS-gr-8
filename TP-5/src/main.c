@@ -59,7 +59,43 @@ int get_member(int actif, char filepath[], member* to_return[])
 
 int main(int *argc, char *argv[])
 {
-    printf("Hello, we run %s\n", argv[0]);
+    char action;
+    do {
+        action = "0"
+        printf("1. Add a member\n");
+        printf("2. Remove a member");
+        printf("3. Search for a member");
+        printf("4. Search for inactive members\n");
+        printf("5. Search for active members");
 
+        printf("To quit programm press 'q'\nEnter your selection (the number): ");
+        scanf("%c", &action);
+
+        switch (action) {
+            case 'q':
+                break;
+            case '1':
+                // code
+                break;
+            case '2':
+                // code
+                break;
+            case '3':
+                // code
+                break;
+            case '4':
+                // code
+                break;
+            case '5':
+                // code
+                break;
+            default:
+                printf("Unknown action %c\n", action);
+                break;
+        }
+
+    } while (action != 'q');
+    printf("Good bye!");
+    
     return EXIT_SUCCESS;
 }
