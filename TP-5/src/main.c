@@ -1,3 +1,4 @@
+// Tu veux quoi à Noël, c'est un code horible 
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -80,7 +81,7 @@ int delete(char email[], char filepath[])
     if (search_member(email, filepath, &member) == EXIT_FAILURE)
         return EXIT_SUCCESS;
     
-    int database = open(filepath, O_RDWR);
+    int database = open(filepath, O_RDWR | O_CREAT,  S_IRUSR | S_IWUSR);
     if (database == -1)
     {
         perror("open");
@@ -149,7 +150,7 @@ int insert(char email[], char firstname[], char lastname[], char phone[], int ac
     char row[max_size];
     sprintf(row, "%s,%s,%s,%s,%d\n", email, firstname, lastname, phone, actif);
     
-    int database = open(filepath, O_WRONLY | O_CREAT);
+    int database = open(filepath, O_WRONLY | O_CREAT,  S_IRUSR | S_IWUSR);
     lseek(database, 0, SEEK_END);
     write(database, (void *)row, max_size);
     close(database);
@@ -174,43 +175,41 @@ int search_member(char target[], char filepath[], member_t* to_return)
     int found = false;
     char email[EMAILSIZE];
 
-    int database = open(filepath, O_RDONLY | O_CREAT);
+    int database = open(filepath, O_RDONLY | O_CREAT,  S_IRUSR | S_IWUSR);
     if (database == -1)
     {
         perror("open");
         return EXIT_FAILURE;
     }
-    do {
-        readed = read(database, buffer, max_size);
-        if (readed > 0)
+    readed = read(database, buffer, max_size);
+    while (readed > 0)
+    {
+        current_len = len_to(&entry, buffer, &readed);
+        sep_mail = len_to(&comma, buffer, &current_len);
+        for (int i = 0; i < sep_mail; i++)
+            email[i] = buffer[i]; // copy email to compare
+        
+        if (is_same_email(email, target))
         {
-            current_len = len_to(&entry, buffer, &readed);
-            sep_mail = len_to(&comma, buffer, &current_len);
-            printf("%s\n", buffer);
-            for (int i = 0; i < sep_mail; i++)
-                email[i] = buffer[i]; // copy email to compare
-            
-            if (is_same_email(email, target))
-            {
-                sep_firstname = len_to(&comma, buffer + sep_mail, &current_len);
-                sep_lastname = len_to(&comma, buffer + sep_firstname, &current_len);
-                sep_phone = len_to(&comma, buffer + sep_lastname, &current_len);
-                sep_actif = len_to(&comma, buffer + sep_phone, &current_len);
-                char firstname[FIRSTNAMESIZE];
-                char lastname[LASTNAMESIZE];
-                char phone[PHONESIZE];
-                to_return->actif = buffer[current_len -2]; // -2 to avoid \n
-                strcpy(to_return->email, email);
-                copy_array(buffer, to_return->firstname, sep_firstname, &sep_mail);
-                copy_array(buffer, to_return->lastname, sep_lastname, &sep_firstname);
-                copy_array(buffer, to_return->phone, sep_phone, &sep_lastname);
+            sep_firstname = len_to(&comma, buffer + sep_mail, &current_len);
+            sep_lastname = len_to(&comma, buffer + sep_firstname, &current_len);
+            sep_phone = len_to(&comma, buffer + sep_lastname, &current_len);
+            sep_actif = len_to(&comma, buffer + sep_phone, &current_len);
+            char firstname[FIRSTNAMESIZE];
+            char lastname[LASTNAMESIZE];
+            char phone[PHONESIZE];
+            to_return->actif = buffer[current_len -2]; // -2 to avoid \n
+            strcpy(to_return->email, email);
+            copy_array(buffer, to_return->firstname, sep_firstname, &sep_mail);
+            copy_array(buffer, to_return->lastname, sep_lastname, &sep_firstname);
+            copy_array(buffer, to_return->phone, sep_phone, &sep_lastname);
 
-                close(database);
-                return EXIT_SUCCESS;
-            }
-            lseek(database, (- readed) + current_len, SEEK_CUR);
+            close(database);
+            return EXIT_SUCCESS;
         }
-    } while (readed > 0);
+        lseek(database, (- readed) + current_len, SEEK_CUR);
+        readed = read(database, buffer, max_size);
+    }
     close(database);
 
     return EXIT_FAILURE;
@@ -235,7 +234,7 @@ int get_member(char actif, char filepath[], member_t to_return[], int size_to_re
     char email[EMAILSIZE];
     int current_index_to_return = 0;
 
-    int database = open(filepath, O_RDONLY | O_CREAT);
+    int database = open(filepath, O_RDONLY | O_CREAT,  S_IRUSR | S_IWUSR);
     if (database == -1)
     {
         perror("open");
