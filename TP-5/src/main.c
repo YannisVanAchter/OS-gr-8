@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <string.h>
-#include <math.h>
 
 #define EMAILSIZE 100
 #define FIRSTNAMESIZE 50
@@ -25,11 +24,18 @@ struct row_t {
 
 struct row_t typedef member_t;
 
+int min(int val1, int val2)
+{
+    if (val1 < val2)
+        return val1;
+    return val2;
+}
+
 int is_same_email(char email1[], char email2[])
 {
     int len1 = strlen(email1);
     int len2 = strlen(email2);
-    int size = fmin(len1, len2);
+    int size = min(len1, len2);
     for (int i = 0; i < size; i++)
     {
         if (email1[i] != email2[i])
@@ -38,12 +44,8 @@ int is_same_email(char email1[], char email2[])
     return true;
 }
 
-int copy_array(char to_copy, char target[], int size, int *start)
+int copy_array(char *to_copy, char target[], int size, int *start)
 {
-    if (start == NULL)
-    {
-        *start = 0;
-    }
     for (int i = 0; i < size; i++)
     {
         target[i] = *(to_copy + *start + i);
@@ -107,16 +109,19 @@ int delete(char email[], char filepath[])
             }
             else 
             {
-                char row = malloc(sizeof(char) * current_len);
+                char *row = malloc(sizeof(char) * current_len);
                 sep_firstname = len_to(&comma, buffer + sep_mail, &current_len);
                 sep_lastname = len_to(&comma, buffer + sep_firstname, &current_len);
                 sep_phone = len_to(&comma, buffer + sep_lastname, &current_len);
                 sep_actif = len_to(&comma, buffer + sep_phone, &current_len);
-                copy_array(buffer, row, sep_mail, 0);
+                copy_array(buffer, row, sep_mail, NULL);
                 copy_array(buffer, row, sep_firstname, &sep_mail);
                 copy_array(buffer, row, sep_lastname, &sep_mail);
                 copy_array(buffer, row, sep_phone, &sep_mail);
-                copy_array(buffer, row, sep_actif, &sep_mail);
+                copy_array(buffer, row, current_len, &sep_mail);
+                free(row);
+                lseek(database, -readed, SEEK_CUR);
+                write(database, (void *)row, strlen(row));
 
             }
         }
@@ -136,14 +141,17 @@ int insert(char email[], char firstname[], char lastname[], char phone[], int ac
     * @param filepath (char[]): path of file where is the database
     * @return (int): EXIT_FAILURE or EXIT_SUCCESS;
     */
+    printf("In insert\n");
     member_t member;
     if (search_member(email, filepath, &member) == EXIT_SUCCESS)
         return EXIT_FAILURE;
 
+    printf("Before format\n");
     int max_size = EMAILSIZE + LASTNAMESIZE + FIRSTNAMESIZE + PHONESIZE + 2; // one for int of actif and one for \n
     char row[max_size];
     sprintf(row, "%s,%s,%s,%s,%d\n", email, firstname, lastname, phone, actif);
     
+    printf("before file\n");
     int database = open(filepath, O_WRONLY | O_CREAT);
     lseek(database, 0, SEEK_END);
     write(database, (void *)row, max_size);
@@ -175,23 +183,22 @@ int search_member(char target[], char filepath[], member_t* to_return)
         perror("open");
         return EXIT_FAILURE;
     }
-
     do {
         readed = read(database, buffer, max_size);
         if (readed > 0)
         {
-            current_len = len_to(&entry, buffer, NULL);
+            current_len = len_to(&entry, buffer, &readed);
             sep_mail = len_to(&comma, buffer, &current_len);
-
+            printf("%s\n", buffer);
             for (int i = 0; i < sep_mail; i++)
                 email[i] = buffer[i]; // copy email to compare
             
             if (is_same_email(email, target))
             {
-                sep_firstname = len_to(&comma, sep_mail, &current_len);
-                sep_lastname = len_to(&comma, sep_firstname, &current_len);
-                sep_phone = len_to(&comma, sep_lastname, &current_len);
-                sep_actif = len_to(&comma, sep_phone, &current_len);
+                sep_firstname = len_to(&comma, buffer + sep_mail, &current_len);
+                sep_lastname = len_to(&comma, buffer + sep_firstname, &current_len);
+                sep_phone = len_to(&comma, buffer + sep_lastname, &current_len);
+                sep_actif = len_to(&comma, buffer + sep_phone, &current_len);
                 char firstname[FIRSTNAMESIZE];
                 char lastname[LASTNAMESIZE];
                 char phone[PHONESIZE];
@@ -206,7 +213,7 @@ int search_member(char target[], char filepath[], member_t* to_return)
             }
             lseek(database, (- readed) + current_len, SEEK_CUR);
         }
-    } while (readed <= 0);
+    } while (readed > 0);
     close(database);
 
     return EXIT_FAILURE;
@@ -248,10 +255,10 @@ int get_member(char actif, char filepath[], member_t to_return[], int size_to_re
             if (current_actif == actif)
             {
                 sep_mail = len_to(&comma, buffer, &current_len);
-                sep_firstname = len_to(&comma, sep_mail, &current_len);
-                sep_lastname = len_to(&comma, sep_firstname, &current_len);
-                sep_phone = len_to(&comma, sep_lastname, &current_len);
-                sep_actif = len_to(&comma, sep_phone, &current_len);
+                sep_firstname = len_to(&comma, buffer + sep_mail, &current_len);
+                sep_lastname = len_to(&comma, buffer + sep_firstname, &current_len);
+                sep_phone = len_to(&comma, buffer + sep_lastname, &current_len);
+                sep_actif = len_to(&comma, buffer + sep_phone, &current_len);
 
                 for (int i = 0; i < sep_mail; i++)
                     email[i] = buffer[i]; // copy email to compare
@@ -259,11 +266,11 @@ int get_member(char actif, char filepath[], member_t to_return[], int size_to_re
                 char firstname[FIRSTNAMESIZE];
                 char lastname[LASTNAMESIZE];
                 char phone[PHONESIZE];
-                to_return[current_index_to_return]->actif = buffer[current_len -1]; 
-                strcpy(to_return[current_index_to_return]->email, email);
-                copy_array(buffer, to_return[current_index_to_return]->firstname, sep_firstname, &sep_mail);
-                copy_array(buffer, to_return[current_index_to_return]->lastname, sep_lastname, &sep_firstname);
-                copy_array(buffer, to_return[current_index_to_return]->phone, sep_phone, &sep_lastname);
+                (to_return + current_index_to_return)->actif = buffer[current_len -1]; 
+                strcpy((to_return + current_index_to_return)->email, email);
+                copy_array(buffer, (to_return + current_index_to_return)->firstname, sep_firstname, &sep_mail);
+                copy_array(buffer, (to_return + current_index_to_return)->lastname, sep_lastname, &sep_firstname);
+                copy_array(buffer, (to_return + current_index_to_return)->phone, sep_phone, &sep_lastname);
 
                 current_index_to_return++;
             }
@@ -366,27 +373,27 @@ int main(void)
     insert("Hamza@gmail.com", "Hamza","VH", "826782687", 0, file_path);
 
     printf("Start get_member test\n");
-    member_t to_get[10];
-    get_member(1, file_path, to_get, 10);
-    get_member(0, file_path, to_get, 10);
+    member_t to_get[100];
+    get_member(1, file_path, to_get, 100);
+    get_member(0, file_path, to_get, 100);
 
     printf("Start search test\n");
-    member_t *member = malloc(sizeof(member_t));
-    success = search_member("yannis@gmail.com", filepath, member);
-    assert(member.email == "yannis@gmail.com"); 
-    free(member);
+    member_t *member1 = malloc(sizeof(member_t));
+    success = search_member("yannis@gmail.com", file_path, member1);
+    assert(member1->email == "yannis@gmail.com"); 
+    free(member1);
 
     printf("Start delete test \n");
     delete("yannis@gmail.com", file_path);
 
     printf("Start search test on delete element\n");
-    member_t *member = malloc(sizeof(member_t));
-    success = search_member("yannis@gmail.com", filepath, member);
+    member_t* member2 = malloc(sizeof(member_t));
+    success = search_member("yannis@gmail.com", file_path, member2);
     assert(success == EXIT_FAILURE); 
-    free(member);
+    free(member2);
 
     printf("Start get_member test\n");
-    get_member(1, file_path, to_get, 10);
+    get_member(1, file_path, to_get, 100);
 
     printf("All test passed\n");
     return EXIT_SUCCESS;
