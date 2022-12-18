@@ -141,17 +141,14 @@ int insert(char email[], char firstname[], char lastname[], char phone[], int ac
     * @param filepath (char[]): path of file where is the database
     * @return (int): EXIT_FAILURE or EXIT_SUCCESS;
     */
-    printf("In insert\n");
     member_t member;
     if (search_member(email, filepath, &member) == EXIT_SUCCESS)
         return EXIT_FAILURE;
 
-    printf("Before format\n");
     int max_size = EMAILSIZE + LASTNAMESIZE + FIRSTNAMESIZE + PHONESIZE + 2; // one for int of actif and one for \n
     char row[max_size];
     sprintf(row, "%s,%s,%s,%s,%d\n", email, firstname, lastname, phone, actif);
     
-    printf("before file\n");
     int database = open(filepath, O_WRONLY | O_CREAT);
     lseek(database, 0, SEEK_END);
     write(database, (void *)row, max_size);
@@ -282,119 +279,79 @@ int get_member(char actif, char filepath[], member_t to_return[], int size_to_re
     return EXIT_FAILURE;
 }
 
-// int main(int *argc, char *argv[])
-// {
-//     char action;int success;
-//     char FILEPATH[8] =  ".db.txt\0";
-//     member_t to_insert; //= malloc(sizeof(member_t));
-//     char *email[EMAILSIZE];
-//     char *email_2[EMAILSIZE];
-//     member_t member;
-//     member_t inactive_members[100];
-//     member_t active_members[100];
-
-//     do {
-//         char action;
-//         printf("1. Add a member\n");
-//         printf("2. Remove a member\n");
-//         printf("3. Search for a member\n");
-//         printf("4. Search for inactive members\n");
-//         printf("5. Search for active members\n");
-
-//         printf("To quit programm press 'q'\nEnter your selection (the number): ");
-//         scanf("%c", &action);
-
-//         char email1[EMAILSIZE], firstname1[EMAILSIZE], lastname1[EMAILSIZE], phone1[EMAILSIZE];
-//         int actif1;
-//         switch (action) {
-//             case 'q':
-//                 break;
-//             case '1':
-//                 printf("Enter your email: ");
-//                 scanf("%s", &email1);
-//                 printf("Enter your name: ");
-//                 scanf("%s", &firstname1);
-//                 printf("Enter your last name: ");
-//                 scanf("%s", &lastname1);
-//                 printf("Enter your phone number: ");
-//                 scanf("%s", &phone1);
-//                 printf("Are you active ? (1 for yes, 0 for no): ");
-//                 scanf("%i", &actif1);
-//                 success = insert(email1, firstname1, lastname1, phone1, actif1, FILEPATH);
-//                 break;
-//             case '2':
-//                 printf("Enter the mail of the member to delete: ");
-//                 scanf("%s", email);
-//                 success = delete(*email, FILEPATH);
-//                 break;
-//             case '3':
-//                 printf("Enter the mail of the member to search: ");
-//                 scanf("%s", email_2);
-//                 success = search_member(*email_2, FILEPATH, &member);
-//                 break;
-//             case '4':
-//                 get_member('N', FILEPATH, inactive_members, 100);
-//                 break;
-//             case '5':
-//                 get_member('Y', FILEPATH, active_members, 100);
-//                 break;
-//             default:
-//                 printf("Unknown action: %c\n", action);
-//                 break;
-//         }
-//         if (success != EXIT_SUCCESS)
-//         {
-//             printf("Something went wrong :(\n");
-//         }
-//         success = EXIT_FAILURE;
-
-//     } while (action != 'q');
-//     printf("Good bye!\n");
-//     // free(to_insert);
-//     free(email);
-//     free(email_2);
-//     free(inactive_members);
-//     free(active_members);
-
-//     return EXIT_SUCCESS;
-// }
-
-int main(void)
+int main(int *argc, char *argv[])
 {
-    printf("Start tests \n");
-    char file_path[10] = "db.txt";
-    int success;
-    printf("Start insert test\n");
-    insert("yannis@gmail.com", "Yannis","VA", "826782687", 1, file_path);
-    insert("simon@gmail.com", "simon","KA", "826782687", 0, file_path);
-    insert("julien@gmail.com", "julien","VP", "826782687", 1, file_path);
-    insert("alexis@gmail.com", "alexis","VV", "826782687", 1, file_path);
-    insert("Youlan@gmail.com", "Youlan","CA", "826782687", 0, file_path);
-    insert("Hamza@gmail.com", "Hamza","VH", "826782687", 0, file_path);
+    char action;int success;
+    char FILEPATH[8] =  ".db.txt\0";
+    member_t to_insert; //= malloc(sizeof(member_t));
+    char *email[EMAILSIZE];
+    char *email_2[EMAILSIZE];
+    member_t member;
+    member_t inactive_members[100];
+    member_t active_members[100];
 
-    printf("Start get_member test\n");
-    member_t to_get[100];
-    get_member(1, file_path, to_get, 100);
-    get_member(0, file_path, to_get, 100);
+    do {
+        char action;
+        printf("1. Add a member\n");
+        printf("2. Remove a member\n");
+        printf("3. Search for a member\n");
+        printf("4. Search for inactive members\n");
+        printf("5. Search for active members\n");
 
-    printf("Start search test\n");
-    member_t *member1 = malloc(sizeof(member_t));
-    success = search_member("yannis@gmail.com", file_path, member1);
-    assert(member1->email == "yannis@gmail.com"); 
-    free(member1);
+        printf("To quit programm press 'q'\nEnter your selection (the number): ");
+        scanf("%c", &action);
 
-    printf("Start delete test \n");
-    delete("yannis@gmail.com", file_path);
+        char email1[EMAILSIZE], firstname1[EMAILSIZE], lastname1[EMAILSIZE], phone1[EMAILSIZE];
+        int actif1;
+        switch (action) {
+            case 'q':
+                break;
+            case '1':
+                printf("Enter your email: ");
+                scanf("%s", &email1);
+                printf("Enter your name: ");
+                scanf("%s", &firstname1);
+                printf("Enter your last name: ");
+                scanf("%s", &lastname1);
+                printf("Enter your phone number: ");
+                scanf("%s", &phone1);
+                printf("Are you active ? (1 for yes, 0 for no): ");
+                scanf("%i", &actif1);
+                success = insert(email1, firstname1, lastname1, phone1, actif1, FILEPATH);
+                break;
+            case '2':
+                printf("Enter the mail of the member to delete: ");
+                scanf("%s", email);
+                success = delete(*email, FILEPATH);
+                break;
+            case '3':
+                printf("Enter the mail of the member to search: ");
+                scanf("%s", email_2);
+                success = search_member(*email_2, FILEPATH, &member);
+                break;
+            case '4':
+                get_member('N', FILEPATH, inactive_members, 100);
+                break;
+            case '5':
+                get_member('Y', FILEPATH, active_members, 100);
+                break;
+            default:
+                printf("Unknown action: %c\n", action);
+                break;
+        }
+        if (success != EXIT_SUCCESS)
+        {
+            printf("Something went wrong :(\n");
+        }
+        success = EXIT_FAILURE;
 
-    printf("Start search test on delete element\n");
-    member_t* member2 = malloc(sizeof(member_t));
-    success = search_member("yannis@gmail.com", file_path, member2);
-    assert(success == EXIT_FAILURE); 
-    free(member2);
+    } while (action != 'q');
+    printf("Good bye!\n");
+    // free(to_insert);
+    free(email);
+    free(email_2);
+    free(inactive_members);
+    free(active_members);
 
-    printf("Start get_member test\n");
-    get_member(1, file_path, to_get, 100);
-
-    printf("All test passed\n");
     return EXIT_SUCCESS;
 }
